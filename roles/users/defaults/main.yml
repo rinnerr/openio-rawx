@@ -1,0 +1,27 @@
+# roles/users/defaults/main.yml
+---
+# Add users
+openio_users_add:
+  - username: openio
+    uid: 120
+    name: openio account
+    group: openio
+    groups: []
+    home_create: true
+    shell: /bin/bash
+openio_users_home: /home
+openio_users_home_mode: "0750"
+# By default, user's primary group
+openio_users_group:
+openio_users_ssh_key_type: rsa
+openio_users_ssh_key_bits: 2048
+openio_users_authorized_keys_exclusive: false
+
+# secondary groups
+openio_users_groups:
+  - groupname: openio
+    gid: 220
+
+# Remove users
+openio_users_remove: []
+...

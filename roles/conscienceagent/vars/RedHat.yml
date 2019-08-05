@@ -1,0 +1,8 @@
+# roles/conscienceagent/vars/RedHat.yml
+# Distribution-specific variables for RHEL, CentOS, ...
+---
+conscienceagent_packages:
+  - "{{ 'openio-sds-server' if openio_conscienceagent_version == 'latest' else 'openio-sds-server-' ~ openio_conscienceagent_version}}"
+
+syslog_user: openio
+...

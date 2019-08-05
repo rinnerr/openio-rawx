@@ -1,0 +1,14 @@
+# {{ ansible_managed }}
+[Unit]
+Description={{ openio_conscienceagent_namespace }}-conscienceagent-{{ openio_conscienceagent_serviceid }}
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=openio
+Group=openio
+ExecStart=/usr/bin/oio-conscience-agent {{ openio_conscienceagent_sysconfig_dir }}/conscienceagent-{{ openio_conscienceagent_serviceid }}/conscienceagent-{{ openio_conscienceagent_serviceid }}.yml
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

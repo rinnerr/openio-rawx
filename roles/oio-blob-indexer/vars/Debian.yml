@@ -1,0 +1,7 @@
+# roles/blob_indexer/vars/Debian.yml
+# Distribution-specific variables for Ubuntu, Debian, ...
+---
+blob_indexer_packages:
+  - openio-sds
+syslog_user: syslog
+...

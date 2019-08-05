@@ -1,0 +1,9 @@
+---
+openio_data_mounts:
+  - { partition: '/dev/sdb', mountpoint: "/var/lib/oio/sds" }
+  - { partition: '/dev/sdc', mountpoint: "/var/lib/oio/sds" }
+  - { partition: '/dev/sdd', mountpoint: "/var/lib/oio/sds" }
+  - { partition: '/dev/sde', mountpoint: "/var/lib/oio/sds" }
+openio_metadata_mounts:
+  - { partition: '/root', mountpoint: "/var/lib/oio/sds" }
+...

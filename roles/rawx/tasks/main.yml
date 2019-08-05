@@ -1,0 +1,123 @@
+# roles/rawx/tasks/main.yml
+---
+- name: "Include {{ ansible_distribution }} variables"
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+  tags: install
+
+- name: "Include {{ ansible_distribution }} tasks"
+  include_tasks: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+  tags: install
+
+- name: create a new primary partition
+  parted: 
+    device: "{{ item.partition }}"
+    number: 1 
+    state: present
+  with_items:
+    - "{{ openio_data_mounts }}"
+
+- name: make filesystem
+  filesystem: 
+    fstype: xfs 
+    dev: "{{ item.partition }}1"
+  with_items: 
+    - "{{ openio_data_mounts }}"
+
+- name: Registriere UUIDs
+  command: blkid -s UUID -o value "{{ item.partition }}1"
+  register: part_uuid
+  with_items:
+    - "{{ openio_data_mounts }}"
+
+- name: mount disk
+  mount: 
+    path: "{{ items.0.mountpoint }}/{{ namespace }}/rawx-{{ idx }}" 
+    src: UUID={{ items.1.stdout }}
+    fstype: xfs
+    opts: defaults
+    state: mounted
+  with_together: 
+    - "{{ openio_data_mounts }}"
+    - "{{ part_uuid.results }}"
+  loop_control:
+    loop_var: items
+    index_var: idx
+
+- name: change file owner and group
+  file: 
+    path: "{{ file.mountpoint }}/{{ namespace }}/rawx-{{ idx }}"
+    owner: "{{ file.owner | default('openio') }}"
+    group: "{{ file.group | default('openio') }}"
+    mode: "{{ file.mode | default(0755) }}"
+  with_items: "{{ openio_data_mounts }}"
+  loop_control:
+    loop_var: file
+    index_var: idx
+
+- name: Ensure directories exists
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('openio') }}"
+    group: "{{ item.group | default('openio') }}"
+    mode: "{{ item.mode | default(0755) }}"
+  with_items:
+    - path: "{{ openio_rawx_volume }}"
+    - path: "/var/lib/oio/sds/{{ openio_rawx_namespace }}/coredump"
+    - path: "{{ openio_rawx_sysconfig_dir }}/{{ openio_rawx_servicename }}"
+    - path: "{{ openio_rawx_pid_directory }}"
+    - path: "/etc/oio/sds/{{ openio_rawx_namespace }}/watch"
+    - path: "/var/log/oio/sds/{{ openio_rawx_namespace }}/{{ openio_rawx_servicename }}"
+      owner: "{{ syslog_user }}"
+      mode: "0770"
+  tags: install
+
+- name: Generate configuration files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: openio
+    group: openio
+    mode: 0640
+  with_items:
+    - src: "rawx.conf.j2"
+      dest: "{{ openio_rawx_sysconfig_dir }}/\
+        {{ openio_rawx_servicename }}/{{ openio_rawx_servicename }}-httpd.conf"
+    - src: "gridinit_rawx.conf.j2"
+      dest: "/etc/systemd/system/openio-{{ openio_rawx_servicename }}.service"
+    - src: "watch-rawx.yml.j2"
+      dest: "{{ openio_rawx_sysconfig_dir }}/watch/{{ openio_rawx_servicename }}.yml"
+  register: _rawx_conf
+
+- name: Ensure pid directory is persistant
+  lineinfile:
+    dest: /etc/tmpfiles.d/rawx.conf
+    create: true
+    line: "d {{ openio_rawx_pid_directory }} 755 openio openio -"
+    owner: openio
+    group: openio
+    mode: 0644
+  tags: install
+  when: openio_rawx_pid_directory.split(' ')[0] | dirname is match("/run/.*")
+
+- name: change user.server.id for rawx service
+  command: setfattr -n user.server.id -v {{ openio_rawx_bind_address }}:{{ openio_rawx_bind_port }} -h {{ openio_rawx_volume }}
+  tags: install
+
+- name: restart rawx
+  systemd:
+    daemon_reload: yes
+    name: "openio-{{ openio_rawx_servicename }}.service"
+    state: restarted
+    enabled: yes
+  when:
+    - _rawx_conf.changed
+    - not openio_rawx_provision_only
+  tags: configure
+...

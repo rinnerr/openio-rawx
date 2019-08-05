@@ -1,0 +1,9 @@
+# roles/conscienceagent/defaults/main.yml
+---
+openio_conscienceagent_namespace: "OPENIO"
+openio_conscienceagent_serviceid: "0"
+
+openio_conscienceagent_version: '4.4.2-1.el7.oio.x86_64'
+
+openio_conscienceagent_provision_only: false
+...

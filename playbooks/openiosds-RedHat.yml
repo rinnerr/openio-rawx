@@ -1,0 +1,16 @@
+---
+- name: "Install needed packages"
+  yum:
+    name: "{{ pkg }}"
+  with_items:
+    - rsyslog-8.24.0-34.el7.x86_64
+    - nmap-ncat-6.40-16.el7.x86_64
+    - python-kazoo-2.2.1-1.el7.noarch
+    - openio-sds-server-4.4.2-1.el7.oio.x86_64
+    - openio-sds-tools-4.4.2-1.el7.oio.x86_64
+    - openio-sds-rsyslog-1.3.4-1.el7.oio.noarch
+    - openio-sds-logrotate-1.7-1.el7.oio.noarch
+  loop_control:
+    loop_var: pkg
+  ignore_errors: "{{ ansible_check_mode }}"
+...

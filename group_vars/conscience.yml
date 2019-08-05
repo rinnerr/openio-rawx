@@ -1,0 +1,5 @@
+---
+openio_zookeeper_servers: "{{ groups['conscience'] }}"
+# openio_conscience_bind_address: "{{ openio_bind_address }}"
+openio_conscience_bind_address: "0.0.0.0"
+...

@@ -1,0 +1,48 @@
+# roles/namespace/tasks/main.yml
+---
+- name: Install package for Erasure Code
+  package:
+    name: "{{ 'libisal' if ansible_os_family == 'RedHat' else 'libisal2' }}"
+    state: present
+  when:
+    - openio_namespace_storage_policy | map('lower') | select('match', 'ecisal') | list
+    - ansible_architecture == 'x86_64'
+  ignore_errors: "{{ ansible_check_mode }}"
+  register: install_packages_isal
+  until: install_packages_isal is success
+  retries: 5
+  delay: 2
+
+- name: Ensure directories exists
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('openio') }}"
+    group: "{{ item.group | default('openio') }}"
+    mode: "{{ item.mode | default(0755) }}"
+  with_items:
+    - path: "/etc/oio/sds.conf.d"
+  tags: install
+
+- name: Generate configuration files
+  template:
+    src: "namespace.j2"
+    dest: "/etc/oio/sds.conf.d/{{ openio_namespace_name }}"
+    owner: openio
+    group: openio
+    mode: 0644
+    force: "{{ openio_namespace_overwrite }}"
+  register: _ns
+  tags: configure
+
+- name: restart oioproxy
+  systemd:
+    daemon_reload: yes
+    name: "openio-oioproxy-0"
+    state: restarted
+    enabled: yes
+  when:
+    - _ns.changed
+  ignore_errors: true  # oioproxy is not necessarily present
+  tags: configure
+...

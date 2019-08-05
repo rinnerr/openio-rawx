@@ -1,0 +1,8 @@
+# roles/namespace/handlers/main.yml
+---
+#- name: restart namespace
+#  service:
+#    name: "{{ namespace_service }}"
+#    state: restarted
+#
+...

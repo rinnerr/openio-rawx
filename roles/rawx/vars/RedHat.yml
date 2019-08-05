@@ -1,0 +1,9 @@
+# roles/rawx/vars/RedHat.yml
+# Distribution-specific variables for RHEL, CentOS, ...
+---
+rawx_packages: "{{ ['openio-sds-server-4.4.2-1.el7.oio.x86_64'] if openio_rawx_golang else ['httpd', 'mod_wsgi-3.4-18.el7.x86_64', 'openio-sds-mod-httpd-4.4.2-1.el7.oio.x86_64', 'attr.x86_64'] }}"
+
+rawx_httpd_bin: "{{'/usr/bin/oio-rawx' if openio_rawx_golang else '/usr/sbin/httpd' }}"
+rawx_httpd_moduledir: /usr/lib64/httpd/modules
+syslog_user: openio
+...

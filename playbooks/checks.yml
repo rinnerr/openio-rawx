@@ -1,0 +1,289 @@
+---
+- name: Preflight - Check inventory
+  hosts: localhost
+  any_errors_fatal: true
+  max_fail_percentage: 0
+
+  tasks:
+    - name: Ansible version is unsupported
+      assert:
+        that:
+          - ansible_version.full is version_compare('2.5.0', '>=')
+          - ansible_version.full is version_compare('2.8.0', '<')
+      check_mode: false
+
+    - name: Even number of zookeeper hosts
+      assert:
+        that: groups.zookeeper |length is not divisibleby 2
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+      check_mode: false
+
+    - name: Not enought meta0
+      assert:
+#        that: groups.meta0|length >= 3
+        that: groups.meta0|length >= 0
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+      check_mode: false
+
+    - name: Test python-netaddr
+      debug:
+        msg: "{{ '192.168.2.19/24' | ipaddr }}"
+      register: _test_netaddr
+      ignore_errors: true
+
+    - name: install python-netaddr
+      become: true
+      package:
+        name: python-netaddr
+      register: _install_netaddr
+      when:
+        - openio_manage_os_requirement
+
+    - name: Python-netaddr is required
+      assert:
+        that: _test_netaddr is success or _install_netaddr is success and _install_netaddr is not skipped
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+      check_mode: false
+
+    - name: Test metadata definition
+      set_fact:
+        _test_metadata: "{{ groups['backs'] \
+          | map('extract', hostvars, ['openio_metadata_mounts', 0]) \
+          | list }}"
+      ignore_errors: true
+
+    - name: All nodes in 'backs' group have to define a openio_metadata_mounts hostvars
+      assert:
+        that:
+          - _test_metadata is iterable
+          - _test_metadata is not string
+      check_mode: false
+
+- name: Preflight - Check hosts
+  hosts: openio
+  strategy: linear
+  any_errors_fatal: true
+  max_fail_percentage: 0
+  become: true
+
+  tasks:
+    - name: SDS release not match
+      assert:
+        that: openio_sds_release in openio_release_supported
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+      check_mode: false
+
+    - name: Number of zookeeper hosts is not odd
+      assert:
+        that: groups.zookeeper |length is not divisibleby 2
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+      when: namespace_storage_policy == "THREECOPIES"
+
+    - name: Number of meta0 hosts is not adequate for three copies
+      assert:
+        that: groups.meta0 | length >= 3
+        #that: groups.meta0 | length >= 0
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+      when: namespace_storage_policy == "THREECOPIES"
+
+    - name: Install python for Ansible
+      raw: "test -e /usr/bin/python || (yum -y update && yum install -y python-minimal)"
+      changed_when: false
+
+    - name: Gathering network facts
+      setup:
+        gather_subset: network
+
+    - name: Gathering hardware facts
+      setup:
+        gather_subset: hardware
+        filter: "{{ item }}"
+      with_items:
+        - ansible_memtotal_mb
+
+    - name: Gathering needed facts
+      setup:
+        gather_subset: min
+        filter: "{{ item }}"
+      with_items:
+        - ansible_hostname
+        - ansible_service_mgr
+        - ansible_distribution
+        - ansible_selinux
+        - ansible_os_family
+        - ansible_apparmor
+        - ansible_kernel
+        - ansible_env
+
+    - name: Reaching {{ openio_mirror }}
+      uri:
+        url: "http://{{ openio_mirror }}/pub/repo/openio/sds/{{ openio_sds_release }}/"
+      register: request
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      environment: "{{ openio_environment }}"
+
+    - name: OpenIO repository is not reachable
+      assert:
+        that:
+          - request.status != -1
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+      check_mode: false
+
+    - name: hostname in openio group are unique
+      assert:
+        that: >
+          groups['openio'] | map('extract', hostvars, ['ansible_hostname']) | list | count
+          ==
+          groups['openio'] | map('extract', hostvars, ['ansible_hostname']) | list | unique | count
+      delegate_to: localhost
+      run_once: true
+
+    - name: 'Gather /etc/passwd entries'
+      getent:
+        database: passwd
+
+    - name: Stop if UID is already used for an account which is not 'openio'
+      assert:
+        that: (item.key == 'openio' and (item.value[1] | int) == openio_user_openio_uid) or (item.key != 'openio' and (item.value[1] | int) != openio_user_openio_uid)
+      with_dict: '{{ getent_passwd }}'
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+
+    - name: Stop if GID is already used for an account which is not 'openio'
+      assert:
+        that: (item.key == 'openio' and (item.value[2] | int) == openio_group_openio_gid) or (item.key != 'openio' and (item.value[2] | int) != openio_group_openio_gid)
+      with_dict: '{{ getent_passwd }}'
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+
+    - name: Get running process
+      command: "/bin/ps auxww"
+      changed_when: false
+      register: ps
+      check_mode: false
+
+    - name: Systemd is absent
+      assert:
+        that: ansible_service_mgr == "systemd"
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+
+    - name: Operating System unsupported
+      assert:
+        that: ansible_distribution in openio_distribution_supported
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+
+    - name: Install libselinux-python
+      package:
+        name: libselinux-python-2.5-14.1.el7.x86_64
+      when:
+        - openio_manage_os_requirement
+        - ansible_os_family == 'RedHat'
+
+    - name: Disable SELinux
+      selinux:
+        state: disabled
+      ignore_errors: true
+      failed_when: false
+      when:
+        - ansible_selinux.status == 'disabled'
+        - ansible_os_family == 'RedHat'
+        - openio_manage_os_requirement
+
+    - name: SELinux is activated
+      assert:
+        that: ansible_selinux.status == 'disabled'
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+      when:
+        - ansible_os_family == 'RedHat'
+        - not openio_manage_os_requirement
+
+    - name: Check AppArmor status
+      command: 'apparmor_status'
+      register: _apparmor_status
+      changed_when: false
+      failed_when: false
+
+    - block:
+        - name: Disable AppArmor
+          command: "{{ item }}"
+          register: _disable_apparmor
+          with_items:
+            - "service apparmor stop"
+            - "service apparmor teardown"
+            - "update-rc.d -f apparmor remove"
+          when:
+            - ansible_os_family == 'Debian'
+            - _apparmor_status.rc == 0
+            - openio_manage_os_requirement
+
+        - name: Check new AppArmor status
+          setup:
+            gather_subset: min
+            filter: "ansible_apparmor"
+          when: _disable_apparmor.changed
+
+        - name: AppArmor is activated
+          assert:
+            that: ansible_apparmor.status == 'disabled'
+          ignore_errors: "{{ openio_ignore_assert_errors }}"
+          when:
+            - ansible_os_family == 'Debian'
+            - _disable_apparmor is success and _disable_apparmor is not skipped
+            - not openio_manage_os_requirement
+
+      when: openio_checks_filter['apparmor']
+
+    - name: Stop and disable firewalld.
+      service:
+        name: firewalld
+        state: stopped
+        enabled: false
+      register: _firewalld_disable
+      when:
+        - openio_manage_os_requirement
+        - "'firewalld' in ps.stdout"
+        - ansible_os_family == 'RedHat'
+
+    - name: Firewalld activated
+      assert:
+        that: "'firewalld' not in ps.stdout or _firewalld_disable | default(false) is success"
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+
+    - name: Memory is too small for zookeepers
+      assert:
+        that: ansible_memtotal_mb >= 1830
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+      when:
+        - inventory_hostname in groups['zookeeper']
+        - openio_checks_filter['zookeeper_memory']
+
+    - name: Kernel version is too low
+      assert:
+        that: ansible_kernel.split('-')[0] is version_compare('3.10', '>=')
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+
+    - name: Check http_proxy variable
+      assert:
+        that:
+          - ansible_env.http_proxy is not defined or openio_environment.http_proxy is defined
+          - ansible_env.https_proxy is not defined or openio_environment.https_proxy is defined
+      ignore_errors: "{{ openio_ignore_assert_errors }}"
+
+    - name: Fill /etc/yum/vars/contentdir
+      copy:
+        dest: /etc/yum/vars/contentdir
+        content: "{{ ansible_distribution | lower }}"
+      when:
+        - ansible_os_family == 'RedHat'
+
+    - name: Test reachability
+      wait_for:
+        host: "{{ item }}"
+        port: "{{ ansible_port }}"
+        timeout: 10
+        delay: 0
+      with_items: "{{ groups['openio'] \
+        | map('extract', hostvars, ['openio_bind_address']) \
+        | list }}"
+      when: openio_checks_filter['reachability']
+...

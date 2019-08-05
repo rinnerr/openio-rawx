@@ -1,0 +1,14 @@
+# {{ ansible_managed }}
+[Unit]
+Description={{ openio_oioproxy_namespace }}-{{ openio_oioproxy_servicename }} daemon from OpenIO
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=openio
+Group=openio
+ExecStart=/usr/bin/oio-proxy -p /run/oio/sds/{{ openio_oioproxy_namespace }}-{{ openio_oioproxy_servicename }}.pid -s OIO,{{ openio_oioproxy_namespace }},oioproxy,{{ openio_oioproxy_serviceid }} -O Config=/etc/oio/sds/{{ openio_oioproxy_namespace }}/{{ openio_oioproxy_servicename }}/{{ openio_oioproxy_servicename }}.conf {{ openio_oioproxy_bind_address }}:{{ openio_oioproxy_bind_port }} {{ openio_oioproxy_namespace }}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+# {{ ansible_managed }}
+[{{ openio_namespace_name }}]
+# endpoints
+{{ '#' if not openio_namespace_conscience_url else '' }}conscience={{ openio_namespace_conscience_url }}
+proxy={{ openio_namespace_oioproxy_url }}
+{{ '#' if not openio_namespace_ecd_url else '' }}ecd={{ openio_namespace_ecd_url }}
+
+{% for option in openio_namespace_options %}
+{{ option }}
+{% endfor %}

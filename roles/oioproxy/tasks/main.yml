@@ -1,0 +1,56 @@
+# roles/oioproxy/tasks/main.yml
+---
+- name: "Include {{ ansible_distribution }} variables"
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+  tags: install
+
+- name: "Include {{ ansible_distribution }} tasks"
+  include_tasks: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+  tags: install
+
+- name: Ensure directories exists
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('openio') }}"
+    group: "{{ item.group | default('openio') }}"
+    mode: "{{ item.mode | default(0755) }}"
+  with_items:
+    - path: "{{ openio_oioproxy_sysconfig_dir }}/{{ openio_oioproxy_servicename }}"
+    - path: "/var/log/oio/sds/{{ openio_oioproxy_namespace }}/{{ openio_oioproxy_servicename }}"
+      owner: "{{ syslog_user }}"
+      mode: "0750"
+  tags: install
+
+- name: Generate configuration files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: openio
+    group: openio
+    mode: 0644
+  with_items:
+    - src: "oioproxy.conf.j2"
+      dest: "{{ openio_oioproxy_sysconfig_dir }}/\
+        {{ openio_oioproxy_servicename }}/{{ openio_oioproxy_servicename }}.conf"
+    - src: "gridinit_oioproxy.conf.j2"
+      dest: "/etc/systemd/system/openio-{{ openio_oioproxy_servicename }}.service"
+  register: _oioproxy_conf
+
+- name: restart oioproxy
+  systemd:
+    daemon_reload: yes
+    name: "openio-{{ openio_oioproxy_servicename }}"
+    state: restarted
+    enabled: yes
+  when:
+    - _oioproxy_conf.changed
+    - not openio_oioproxy_provision_only
+  tags: configure
+...

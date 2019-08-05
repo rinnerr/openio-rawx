@@ -1,0 +1,27 @@
+# roles/namespace/defaults/main.yml
+---
+openio_namespace_name: "OPENIO"
+openio_namespace_conscience_url: ""
+openio_namespace_zookeeper_url: ""
+openio_namespace_oioproxy_url: "{{ ansible_default_ipv4.address }}:6006"
+openio_namespace_event_agent_url: "beanstalk://{{ ansible_default_ipv4.address }}:6014"
+openio_namespace_ecd_url: ""
+openio_namespace_meta1_digits: 2
+openio_namespace_udp_allowed: "yes"
+
+openio_namespace_storage_policy: "TOWCOPIES"
+openio_namespace_chunk_size_megabytes: 100
+openio_namespace_service_update_policy:
+  - name: meta2
+    policy: KEEP
+    replicas: 3
+    distance: 1
+  - name: rdir
+    policy: KEEP
+    replicas: 1
+    distance: 1
+
+openio_namespace_options: []
+
+openio_namespace_overwrite: false
+...

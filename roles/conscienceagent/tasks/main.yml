@@ -1,0 +1,57 @@
+# roles/conscienceagent/tasks/main.yml
+---
+- name: "Include {{ ansible_distribution }} variables"
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+  tags: install
+
+- name: "Include {{ ansible_distribution }} tasks"
+  include_tasks: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+  tags: install
+
+- name: Ensure directories exists
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('openio') }}"
+    group: "{{ item.group | default('openio') }}"
+    mode: "{{ item.mode | default(0755) }}"
+  with_items:
+    - path: "{{ openio_conscienceagent_sysconfig_dir }}/{{ openio_conscienceagent_servicename }}"
+    - path: "{{ openio_conscienceagent_sysconfig_dir }}/watch"
+    - path: "/var/log/oio/sds/{{ openio_conscienceagent_namespace }}/{{ openio_conscienceagent_servicename }}"
+      owner: "{{ syslog_user }}"
+      mode: "0750"
+  tags: install
+
+- name: Generate configuration files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: openio
+    group: openio
+    mode: 0644
+  with_items:
+    - src: "conscienceagent.yml.j2"
+      dest: "{{ openio_conscienceagent_sysconfig_dir }}/\
+        conscienceagent-{{ openio_conscienceagent_serviceid }}/{{ openio_conscienceagent_servicename }}.yml"
+    - src: "gridinit_conscienceagent.conf.j2"
+      dest: "/etc/systemd/system/openio-{{ openio_conscienceagent_servicename }}.service"
+  register: _conscienceagent_conf
+
+- name: restart conscienceagent
+  systemd:
+    daemon_reload: yes
+    name: "openio-{{ openio_conscienceagent_servicename }}.service"
+    state: restarted
+    enabled: yes
+  when:
+    - _conscienceagent_conf.changed
+    - not openio_conscienceagent_provision_only
+  tags: configure
+...

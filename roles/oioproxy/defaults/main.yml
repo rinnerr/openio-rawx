@@ -1,0 +1,47 @@
+# roles/oioproxy/defaults/main.yml
+---
+openio_oioproxy_namespace: "OPENIO"
+openio_oioproxy_serviceid: "0"
+
+openio_oioproxy_version: '4.4.2-1.el7.oio.x86_64'
+
+openio_oioproxy_provision_only: false
+
+openio_oioproxy_gridinit_dir: "/etc/gridinit.d/{{ openio_oioproxy_namespace }}"
+openio_oioproxy_gridinit_file_prefix: ""
+
+openio_oioproxy_gridinit_on_die: respawn
+openio_oioproxy_gridinit_start_at_boot: true
+
+openio_oioproxy_bind_interface: "{{ ansible_default_ipv4.alias }}"
+openio_oioproxy_bind_address:
+  "{{ hostvars[inventory_hostname]['ansible_' + openio_oioproxy_bind_interface]['ipv4']['address'] }}"
+
+openio_oioproxy_bind_port: 6006
+openio_oioproxy_options: []
+#  - proxy.bulk.max.create_many=100
+#  - proxy.bulk.max.delete_many=100
+#  - proxy.cache.enabled=on
+#  - proxy.dir_shuffle=on
+#  - proxy.force.master=off
+#  - proxy.outgoing.timeout.common=30.000000
+#  - proxy.outgoing.timeout.config=10.000000
+#  - proxy.outgoing.timeout.conscience=10.000000
+#  - proxy.outgoing.timeout.stat=10.000000
+#  - proxy.period.cs.downstream=5
+#  - proxy.period.cs.upstream=1
+#  - proxy.period.refresh.csurl=30
+#  - proxy.period.refresh.srvtypes=30
+#  - proxy.period.reload.nsinfo=30
+#  - proxy.prefer.master_for_read=off
+#  - proxy.prefer.master_for_write=on
+#  - proxy.prefer.slave_for_read=off
+#  - proxy.quirk.local_scores=off
+#  - proxy.srv_shuffle=on
+#  - proxy.ttl.services.down=5000000
+#  - proxy.ttl.services.known=432000000000
+#  - proxy.ttl.services.local=30000000
+#  - proxy.ttl.services.master=5000000
+#  - proxy.url.path.maxlen=2048
+
+...

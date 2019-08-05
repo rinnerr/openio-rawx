@@ -1,0 +1,9 @@
+---
+openio_conscienceagent_sysconfig_dir: "/etc/oio/sds/{{ openio_conscienceagent_namespace }}"
+openio_conscienceagent_servicename: "conscienceagent-{{ openio_conscienceagent_serviceid }}"
+
+openio_conscienceagent_definition_file: >
+  "{{ openio_conscienceagent_sysconfig_dir }}/
+  {{ openio_conscienceagent_servicename }}/{{ openio_conscienceagent_servicename }}.conf"
+#openio_conscienceagent_gridinit_dir: "/etc/gridinit.d/{{ openio_conscienceagent_namespace }}"
+...

@@ -1,0 +1,7 @@
+# roles/blob_indexer/vars/RedHat.yml
+# Distribution-specific variables for RHEL, CentOS, ...
+---
+blob_indexer_packages:
+  - openio-sds-server-4.4.2-1.el7.oio.x86_64
+syslog_user: openio
+...

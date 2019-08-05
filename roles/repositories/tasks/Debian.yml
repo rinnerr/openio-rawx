@@ -1,0 +1,69 @@
+---
+- name: Check if the repository is available
+  uri:
+    url: "{{ openio_repository_mirror_url_base }}/{{ repo.key }}/{{ repo.value.release }}/{{ ansible_lsb.id | default(ansible_distribution)}}/{{ ansible_distribution_release }}"
+  with_dict: "{{ openio_repository_products }}"
+  when:
+    - repo.value.state is not defined or repo.value.state != 'absent'
+    - openio_repository_check_reachability
+  loop_control:
+    loop_var: repo
+  no_log: '{{ openio_repository_no_log }}'
+
+- name: Install python-apt
+  package:
+    name: python-apt
+    state: present
+  check_mode: false
+
+- name: Ensure lsb-release package is installed
+  package:
+    name: "lsb-release"
+    state: present
+  register: lsbrelease
+
+- name: "Refetch facts"
+  setup:
+    gather_subset: min
+    filter: ansible_lsb
+  when: lsbrelease.changed
+
+- name: "Configure Backports repository for {{ ansible_lsb.id }} {{ ansible_distribution_release }}"
+  apt_repository:
+    repo: "deb http://httpredir.debian.org/debian/ {{ ansible_distribution_release }}-backports main contrib non-free"
+    state: present
+    filename: "{{ ansible_distribution_release }}-backports"
+  when: ansible_lsb.id == 'Debian'
+
+- name: "Setup repository key"
+  apt_key:
+    id: "{{ openio_repository_keyid }}"
+    url: "{{ openio_repository_mirror_url_base_nocreds }}/{{ openio_repository_gpgkey }}"
+    state: present
+
+- name: "Configure repositories for {{ ansible_lsb.id }} {{ ansible_distribution_release }}"
+  apt_repository:
+    repo: "deb {{ openio_repository_mirror_url_base }}/{{ repo.key }}/{{ repo.value.release }}/{{ ansible_lsb.id | default(ansible_distribution) }}/ {{ ansible_distribution_release }}/"
+    state: "{{ repo.value.state | default(openio_repository_product_state_default) }}"
+    filename: "openio-{{ repo.key }}-{{ repo.value.release }}"
+  with_dict: "{{ openio_repository_products }}"
+  loop_control:
+    loop_var: repo
+  no_log: '{{ openio_repository_no_log }}'
+
+- name: "Update APT cache"
+  apt:
+    update_cache: true
+  changed_when: false
+
+- name: Configure policy to disable starting services at package install
+  copy:
+    src: policy-rc.d
+    dest: /usr/sbin/policy-rc.d
+    owner: root
+    group: root
+    mode: 0755
+  when:
+    - openio_repository_disable_policy_autostart
+
+...

@@ -1,0 +1,57 @@
+# roles/blob_indexer/tasks/main.yml
+---
+- name: "Include {{ ansible_distribution }} variables"
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+  tags: install
+
+- name: "Include {{ ansible_distribution }} tasks"
+  include_tasks: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+  tags: install
+
+- name: Ensure directories exists
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('openio') }}"
+    group: "{{ item.group | default('openio') }}"
+    mode: "{{ item.mode | default(0755) }}"
+  with_items:
+    - path: "{{ openio_blob_indexer_sysconfig_dir }}/{{ openio_blob_indexer_servicename }}"
+    - path: "{{ openio_blob_indexer_volume }}"
+    - path: "/var/log/oio/sds/{{ openio_blob_indexer_namespace }}/{{ openio_blob_indexer_servicename }}"
+      owner: "{{ syslog_user }}"
+      mode: "0750"
+  tags: install
+
+- name: Generate configuration files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: openio
+    group: openio
+    mode: 0644
+  with_items:
+    - src: "blob_indexer.conf.j2"
+      dest: "{{ openio_blob_indexer_sysconfig_dir }}/\
+        {{ openio_blob_indexer_servicename }}/{{ openio_blob_indexer_servicename }}.conf"
+    - src: "gridinit_blob_indexer.conf.j2"
+      dest: "/etc/systemd/system/openio-{{ openio_blob_indexer_servicename }}.service"
+  register: _blob_indexer_conf
+
+- name: restart blob_indexer
+  systemd:
+    daemon_reload: yes
+    name: "openio-{{ openio_blob_indexer_servicename }}.service"
+    state: restarted
+    enabled: yes
+  when:
+    - _blob_indexer_conf.changed
+    - not openio_blob_indexer_provision_only
+  tags: configure
+...
