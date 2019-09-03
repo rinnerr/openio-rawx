@@ -139,9 +139,9 @@
     - name: hostname in openio group are unique
       assert:
         that: >
-          groups['openio'] | map('extract', hostvars, ['ansible_hostname']) | list | count
+          groups['add-node'] | map('extract', hostvars, ['ansible_hostname']) | list | count
           ==
-          groups['openio'] | map('extract', hostvars, ['ansible_hostname']) | list | unique | count
+          groups['add-node'] | map('extract', hostvars, ['ansible_hostname']) | list | unique | count
       delegate_to: localhost
       run_once: true
 
@@ -287,7 +287,7 @@
         port: "{{ ansible_port }}"
         timeout: 10
         delay: 0
-      with_items: "{{ groups['openio'] \
+      with_items: "{{ groups['add-node'] \
         | map('extract', hostvars, ['openio_bind_address']) \
         | list }}"
       when: openio_checks_filter['reachability']
