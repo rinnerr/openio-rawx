@@ -40,7 +40,7 @@
     - src: "conscienceagent.yml.j2"
       dest: "{{ openio_conscienceagent_sysconfig_dir }}/\
         conscienceagent-{{ openio_conscienceagent_serviceid }}/{{ openio_conscienceagent_servicename }}.yml"
-    - src: "gridinit_conscienceagent.conf.j2"
+    - src: "service-conscienceagent.service.j2"
       dest: "/etc/systemd/system/openio-{{ openio_conscienceagent_servicename }}.service"
   register: _conscienceagent_conf
 

@@ -1,11 +1,11 @@
 ---
 # Package repository to use
-openio_sds_release: "18.10"
+openio_sds_release: "19.04"
 
 # Namespace
 namespace: OPENIO
-namespace_meta1_digits: "2"
-namespace_storage_policy: TOWCOPIES
+namespace_meta1_digits: "4"
+namespace_storage_policy: TWOCOPIES
 namespace_chunk_size_megabytes: 100
 openio_replicas: 2
 # Service locations (must be ended by a dot)
@@ -48,6 +48,10 @@ openio_sysctl_entries:
   net.ipv4.tcp_tw_reuse: 1
   net.ipv4.tcp_window_scaling: 1
   kernel.pid_max: 196608
+#rdir
+openio_rdir_bind_address: "{{ openio_bind_address }}"
+openio_rdir_global_bind_port: 6300
+openio_rdir_location: "{{ openio_location_room | default ('') }}{{ openio_location_rack | default ('') }}{{ openio_location_server | default ('') }}{{ openio_rdir_serviceid }}"
 
 
 ########

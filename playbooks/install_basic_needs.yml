@@ -41,8 +41,8 @@
         sds:
           release: "{{ openio_sds_release | default(hostvars[groups['openio'][0]]['openio_sds_release']) }}"
 
-    - role: ntp
-      when: ntp_enabled
+    # - role: ntp
+    #   when: ntp_enabled
 
     # - role: gridinit
     #   openio_gridinit_conf_location: "/etc/gridinit.d/{*,*/*}"

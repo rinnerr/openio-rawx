@@ -1,20 +1,29 @@
 ---
 openio_data_mounts:
-  - { partition: /dev/sdb, mountpoint: /var/lib/oio/sds }
-  - { partition: /dev/sdc, mountpoint: /var/lib/oio/sds }
+  - { partition: /dev/sda, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdb, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdc, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdd, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sde, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdf, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdg, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdh, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdi, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdj, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdk, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdl, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdm, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdn, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdo, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdp, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdq, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdr, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sds, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdt, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdu, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdv, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdw, mountpoint: /mnt/ssd/oio/sds }
+  - { partition: /dev/sdx, mountpoint: /mnt/ssd/oio/sds }
 openio_metadata_mounts:
-  - { partition: /root, mountpoint: /var/lib/oio/sds }
-
-# Examples
-# Conscience's IP NATted for this host
-#namespace_conscience_address: 192.168.1.1
-
-# Define a different interface for this host:
-#openio_bind_interface: eth2
-
-# Define an IP instead of an interface
-#openio_account_bind_address: 10.0.0.1
-#openio_bind_address: 10.0.0.1
-#openio_memcached_bind_address: 10.0.0.1
-#openio_zookeeper_bind_address: 10.0.0.1
+  - { partition: /root, mountpoint: /mnt/ssd/oio/sds }
 ...

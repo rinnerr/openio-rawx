@@ -11,14 +11,6 @@
   import_playbook: playbooks/openiosds.yml
   tags: sds
 
-#- name: Swift
-#  import_playbook: playbooks/oioswift.yml
-#  tags: swift
-
-#- name: Post install
-#  import_playbook: playbooks/postinstall.yml
-#  tags: post
-
 - name: Inventory
   import_playbook: playbooks/inventory.yml
   tags: inventory

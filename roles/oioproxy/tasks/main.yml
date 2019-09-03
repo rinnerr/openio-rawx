@@ -39,7 +39,7 @@
     - src: "oioproxy.conf.j2"
       dest: "{{ openio_oioproxy_sysconfig_dir }}/\
         {{ openio_oioproxy_servicename }}/{{ openio_oioproxy_servicename }}.conf"
-    - src: "gridinit_oioproxy.conf.j2"
+    - src: "oioproxy.service.j2"
       dest: "/etc/systemd/system/openio-{{ openio_oioproxy_servicename }}.service"
   register: _oioproxy_conf
 

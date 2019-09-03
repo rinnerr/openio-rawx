@@ -1,9 +1,10 @@
 # {{ ansible_managed }}
 [{{ openio_namespace_name }}]
 # endpoints
-{{ '#' if not openio_namespace_conscience_url else '' }}conscience={{ openio_namespace_conscience_url }}
+conscience={{ openio_namespace_conscience_url }}
 {{ '#' if not openio_namespace_zookeeper_url else '' }}zookeeper={{ openio_namespace_zookeeper_url }}
 proxy={{ openio_namespace_oioproxy_url }}
+{{ '#' if not openio_namespace_event_agent_url else '' }}event-agent={{ openio_namespace_event_agent_url }}
 {{ '#' if not openio_namespace_ecd_url else '' }}ecd={{ openio_namespace_ecd_url }}
 
 udp_allowed={{ openio_namespace_udp_allowed }}
@@ -12,12 +13,7 @@ meta1_digits={{ openio_namespace_meta1_digits }}
 ns.meta1_digits={{ openio_namespace_meta1_digits }}
 ns.storage_policy={{ openio_namespace_storage_policy }}
 ns.chunk_size={{ (openio_namespace_chunk_size_megabytes | int) * 1024 * 1024 }}
-
-proxy.bulk.max.delete_many={{ openio_namespace_number_of_objects_delete_in_a_proxy }}
-sqliterepo.cache.waiting.max={{ (openio_namespace_sqliterepo_cache_waiting_max | int) * 1024 * 1024 }}
-sqliterepo.repo.hard_max={{ (openio_namespace_sqliterepo_repo_hard_max | int) * 1024 }}
-sqliterepo.repo.soft_max={{ (openio_namespace_sqliterepo_repo_soft_max | int) * 1024 }}
-sqliterepo.repo.fd_max_active={{ openio_namespace_sqliterepo_repo_fd_max_active }}
+ns.service_update_policy={% for servicetype in openio_namespace_service_update_policy %}{{ servicetype.name }}={{ servicetype.policy }}|{{ servicetype.replicas }}|{{ servicetype.distance }}|;{% endfor %}
 
 {% for option in openio_namespace_options %}
 {{ option }}

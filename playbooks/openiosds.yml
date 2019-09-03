@@ -1,29 +1,13 @@
 ---
 - name: OpenIO SDS - Collect facts needed
   any_errors_fatal: true
-  hosts: openio
+  hosts: rawx
   become: true
   environment: "{{ openio_environment }}"
   tags:
-    # - account
-    # - bootstrap
-    # - beanstalkd
-    # - conscience
     - conscience-agent
-    # - ecd
-    # - meta
-    # - meta0
-    # - meta1
-    # - meta2
-    - namespace
-    # - oio-blob-rebuilder
-    - oio-blob-indexer
-    # - oio-event-agent
     - oioproxy
     - rawx
-    # - rdir
-    # - redis
-    # - zookeeper
   tasks:
     - name: Gathering needed network facts
       setup:
@@ -50,7 +34,7 @@
 
 - name: OpenIO SDS - Install requirements to installation on nodes
   any_errors_fatal: true
-  hosts: openio
+  hosts: rawx
   become: true
   environment: "{{ openio_environment }}"
 
@@ -85,43 +69,9 @@
         - "{{ openio_data_mounts | default( [] ) }}"
         #- "{{ openio_metadata_mounts | default( [] ) }}"
 
-###
-
-# - name: OpenIO SDS - Install and configure OpenIO redis
-#   any_errors_fatal: true
-#   hosts: redis
-#   become: true
-#   environment: "{{ openio_environment }}"
-#   tags: redis
-
-#   roles:
-#     - role: redis
-#       openio_redis_namespace: "{{ namespace }}"
-#       openio_redis_provision_only: "{{ openio_maintenance_mode }}"
-#       openio_redis_type: "redis"
-#       openio_redis_bind_port: "{{ openio_redis_server_bind_port }}"
-#       openio_redis_volume: "{{ openio_metadata_mounts[0]['mountpoint'] }}/{{ namespace }}/{{ openio_redis_type }}-{{ openio_redis_serviceid }}"
-#       when:
-#         - openio_metadata_mounts is defined
-#         - openio_metadata_mounts[0]
-
-#     - role: redis
-#       openio_redis_namespace: "{{ namespace }}"
-#       openio_redis_provision_only: "{{ openio_maintenance_mode }}"
-#       openio_redis_type: "redissentinel"
-#       openio_redis_bind_port: "{{ openio_redis_sentinel_bind_port }}"
-#       openio_redis_volume: "{{ openio_metadata_mounts[0]['mountpoint'] }}/{{ namespace }}/{{ openio_redis_type }}-{{ openio_redis_serviceid }}"
-#       when:
-#         - openio_metadata_mounts is defined
-#         - openio_metadata_mounts[0]
-
-
-#   tasks: []   # TODO healthcheck
-# ###
-
 - name: OpenIO SDS - Install and configure OpenIO Proxy
   any_errors_fatal: true
-  hosts: add-node
+  hosts: rawx
   become: true
   environment: "{{ openio_environment }}"
   tags: oioproxy
@@ -132,259 +82,6 @@
       openio_oioproxy_provision_only: "{{ openio_maintenance_mode }}"
 
   tasks: []   # TODO healthcheck
-# ###
-
-- name: OpenIO SDS - Install and configure OpenIO Namespace
-  any_errors_fatal: true
-  hosts: add-node
-  become: true
-  environment: "{{ openio_environment }}"
-  tags: namespace
-
-  roles:
-    - role: namespace
-      openio_namespace_name: "{{ namespace }}"
-###
-
-# - name: OpenIO SDS - Install and configure OpenIO zookeeper
-#   any_errors_fatal: true
-#   hosts: zookeeper
-#   become: true
-#   environment: "{{ openio_environment }}"
-#   tags: zookeeper
-
-#   roles:
-#     - role: zookeeper
-#       openio_zookeeper_namespace: "{{ namespace }}"
-#       openio_zookeeper_provision_only: "{{ openio_maintenance_mode }}"
-#       openio_zookeeper_volume: "{{ openio_metadata_mounts[0]['mountpoint'] }}/{{ namespace }}/zookeeper-{{ openio_zookeeper_serviceid }}"
-#       when:
-#         - openio_metadata_mounts is defined
-#         - openio_metadata_mounts[0]
-
-#   tasks:
-#     - block:
-#         - name: Check ZooKeeper status
-#           znode:
-#             hosts: "{{ openio_bind_address }}:6005"
-#             name: "/hc/ns/{{ namespace }}"
-#             op: get
-#           register: openio_zk_status
-#           failed_when: false
-#           run_once: true
-
-#         - name: Wait for Zookeeper to be online
-#           shell: "echo ruok | nc {{ item }} 6005"
-#           register: result
-#           until: result.stdout.find("imok") != -1
-#           retries: 10
-#           delay: 3
-#           with_items: "{{ groups['zookeeper'] \
-#             | map('extract', hostvars, ['openio_bind_address'])\
-#             | list }}"
-#           run_once: true
-#           changed_when: false
-
-#         - name: "Bootstrapping ZooKeeper for namespace {{ namespace }}"
-#           command: "/usr/bin/zk-bootstrap.py {{ namespace }}"
-#           when: 'openio_zk_status.msg == "The requested node does not exist."'
-#           register: zk_bootstrap
-#           until: zk_bootstrap.rc == 0
-#           retries: 3
-#           delay: 5
-#           ignore_errors: true
-#           run_once: true
-
-#         - name: "Bootstrapping ZooKeeper for namespace {{ namespace }} in slow mode"
-#           command: "/usr/bin/zk-bootstrap.py {{ namespace }}"
-#           when:
-#             - 'openio_zk_status.msg == "The requested node does not exist."'
-#             - zk_bootstrap.failed
-#           register: zk_bootstrap_slow
-#           until: zk_bootstrap_slow.rc == 0
-#           retries: 3
-#           delay: 5
-#           run_once: true
-
-#       when:
-#         - openio_metadata_mounts is defined
-#         - openio_metadata_mounts[0]
-#         - not ansible_check_mode
-# ###
-
-# - name: OpenIO SDS - Install and configure OpenIO beanstalkd
-#   any_errors_fatal: true
-#   hosts: backs
-#   become: true
-#   environment: "{{ openio_environment }}"
-#   tags: beanstalkd
-
-#   roles:
-#     - role: beanstalkd
-#       openio_beanstalkd_namespace: "{{ namespace }}"
-#       openio_beanstalkd_bind_address: "{{ openio_bind_address }}"
-#       openio_beanstalkd_provision_only: "{{ openio_maintenance_mode }}"
-#       openio_beanstalkd_volume: "{{ openio_metadata_mounts[0]['mountpoint'] }}/{{ namespace }}/beanstalkd-{{ openio_beanstalkd_serviceid }}"
-#       when:
-#         - openio_metadata_mounts is defined
-#         - openio_metadata_mounts[0]
-
-#   tasks: []   # TODO healthcheck
-# ###
-
-# - name: OpenIO SDS - Install and configure OpenIO Conscience
-#   any_errors_fatal: true
-#   hosts: conscience
-#   become: true
-#   environment: "{{ openio_environment }}"
-#   tags: conscience
-
-#   roles:
-#     - role: conscience
-#       openio_conscience_serviceid: "0"
-#       openio_conscience_namespace: "{{ namespace }}"
-#       openio_conscience_provision_only: "{{ openio_maintenance_mode }}"
-
-#   tasks: []   # TODO healthcheck
-# ###
-
-# - name: OpenIO SDS - Install and configure OpenIO Account
-#   any_errors_fatal: true
-#   hosts: account
-#   become: true
-#   environment: "{{ openio_environment }}"
-#   tags: account
-
-#   roles:
-#     - role: account
-#       openio_account_namespace: "{{ namespace }}"
-#       openio_account_provision_only: "{{ openio_maintenance_mode }}"
-
-#   tasks: []   # TODO healthcheck
-# ###
-
-# - name: OpenIO SDS - Install and configure OpenIO meta0
-#   any_errors_fatal: true
-#   hosts: meta0
-#   become: true
-#   environment: "{{ openio_environment }}"
-#   tags:
-#     - meta0
-#     - meta
-
-#   tasks:
-#     - name: Install meta0
-#       include_role:
-#         name: meta
-#       vars:
-#         openio_meta_namespace: "{{ namespace }}"
-#         openio_meta_type: meta0
-#         openio_meta_serviceid: "0"
-#         openio_meta_bind_port: "{{ openio_meta0_global_bind_port + openio_meta_serviceid | int }}"
-#         openio_meta_volume: "{{ openio_metadata_mounts[0]['mountpoint'] }}/{{ namespace }}/meta0-{{ openio_meta_serviceid }}"
-#         openio_meta_options: "{{ openio_meta0_options }}"
-#         openio_meta_provision_only: "{{ openio_maintenance_mode }}"
-#       when:
-#         - openio_metadata_mounts is defined
-#         - openio_metadata_mounts[0]
-
-# # TODO healthcheck
-
-# ###
-
-# - name: OpenIO SDS - Install and configure OpenIO meta1
-#   any_errors_fatal: true
-#   hosts: meta1
-#   become: true
-#   environment: "{{ openio_environment }}"
-#   tags:
-#     - meta1
-#     - meta
-
-#   tasks:
-#     - block:
-#         - name: Generate list of meta1
-#           set_fact:
-#             meta1: >-
-#               {% set _var = [] -%}
-#               {% for mount in openio_metadata_mounts -%}
-#               {%   set partition_index = loop.index0 -%}
-#               {%   set process_per_partition = mount.meta1_count | default(1) -%}
-#               {%   for service_id_per_partition in range(process_per_partition) -%}
-#               {%     set service_id_total = service_id_per_partition + process_per_partition * partition_index -%}
-#               {%     set _dict = {'partition': mount.partition, 'mountpoint': mount.mountpoint, 'id': service_id_total} -%}
-#               {%     if _var.append(_dict) -%}{% endif -%}
-#               {%   endfor -%}
-#               {% endfor -%}
-#               {{ _var }}
-
-#         - name: Install meta1
-#           include_role:
-#             name: meta
-#           vars:
-#             openio_meta_namespace: "{{ namespace }}"
-#             openio_meta_type: meta1
-#             openio_meta_serviceid: "{{ meta.id }}"
-#             openio_meta_bind_port: "{{ openio_meta1_global_bind_port + meta.id | int }}"
-#             openio_meta_volume: "{{ meta.mountpoint }}/{{ namespace }}/meta1-{{ openio_meta_serviceid }}"
-#             openio_meta_options: "{{ openio_meta1_options }}"
-#             openio_meta_provision_only: "{{ openio_maintenance_mode }}"
-#           with_items: "{{ meta1 }}"
-#           loop_control:
-#             loop_var: meta
-#       when:
-#         - openio_metadata_mounts is defined
-#         - openio_metadata_mounts[0]
-
-# # TODO healthcheck
-
-# ###
-
-# - name: OpenIO SDS - Install and configure OpenIO meta2
-#   any_errors_fatal: true
-#   hosts: meta2
-#   become: true
-#   environment: "{{ openio_environment }}"
-#   tags:
-#     - meta2
-#     - meta
-
-#   tasks:
-#     - block:
-#         - name: Generate list of meta2
-#           set_fact:
-#             meta2: >-
-#               {% set _var = [] -%}
-#               {% for mount in openio_metadata_mounts -%}
-#               {%   set partition_index = loop.index0 -%}
-#               {%   set process_per_partition = mount.meta2_count | default(1) -%}
-#               {%   for service_id_per_partition in range(process_per_partition) -%}
-#               {%     set service_id_total = service_id_per_partition + process_per_partition * partition_index -%}
-#               {%     set _dict = {'partition': mount.partition, 'mountpoint': mount.mountpoint, 'id': service_id_total} -%}
-#               {%     if _var.append(_dict) -%}{% endif -%}
-#               {%   endfor -%}
-#               {% endfor -%}
-#               {{ _var }}
-
-#         - name: Install meta2
-#           include_role:
-#             name: meta
-#           vars:
-#             openio_meta_namespace: "{{ namespace }}"
-#             openio_meta_type: meta2
-#             openio_meta_serviceid: "{{ meta.id }}"
-#             openio_meta_bind_port: "{{ openio_meta2_global_bind_port + meta.id | int }}"
-#             openio_meta_volume: "{{ meta.mountpoint }}/{{ namespace }}/meta2-{{ openio_meta_serviceid }}"
-#             openio_meta_options: "{{ openio_meta2_options }}"
-#             openio_meta_provision_only: "{{ openio_maintenance_mode }}"
-#           with_items: "{{ meta2 }}"
-#           loop_control:
-#             loop_var: meta
-#       when:
-#         - openio_metadata_mounts is defined
-#         - openio_metadata_mounts[0]
-
-# TODO healthcheck
 
 ###
 
@@ -418,122 +115,6 @@
 
 # TODO healthcheck
 
-###
-
-- name: OpenIO SDS - Install and configure OpenIO oio-blob-indexer
-  any_errors_fatal: true
-  hosts: rawx
-  become: true
-  environment: "{{ openio_environment }}"
-  tags:
-    - oio-blob-indexer
-
-  tasks:
-    - block:
-        - name: Install oio-blob-indexer
-          include_role:
-            name: oio-blob-indexer
-          vars:
-            openio_blob_indexer_namespace: "{{ namespace }}"
-            openio_blob_indexer_serviceid: "{{ idx }}"
-            openio_blob_indexer_servicename: "oio-blob-indexer-{{ openio_blob_indexer_serviceid }}"
-            openio_blob_indexer_volume: "{{ mount.mountpoint }}/{{ namespace }}/rawx-{{ openio_blob_indexer_serviceid }}"
-            openio_blob_indexer_provision_only: "{{ openio_maintenance_mode }}"
-          with_items: "{{ openio_data_mounts }}"
-          loop_control:
-            loop_var: mount
-            index_var: idx
-
-      when:
-        - openio_data_mounts is defined
-        - openio_data_mounts
-
-# TODO healthcheck
-
-###
-
-# - name: OpenIO SDS - Install and configure OpenIO rdir
-#   any_errors_fatal: true
-#   hosts: rawx
-#   become: true
-#   environment: "{{ openio_environment }}"
-#   tags:
-#     - rdir
-
-#   tasks:
-#     - block:
-#         - name: Install rdir
-#           include_role:
-#             name: rdir
-#           vars:
-#             openio_rdir_namespace: "{{ namespace }}"
-#             openio_rdir_serviceid: "{{ idx }}"
-#             openio_rdir_bind_port: "{{ openio_rdir_global_bind_port + idx }}"
-#             openio_rdir_volume: "{{ mount.mountpoint }}/{{ namespace }}/rdir-{{ openio_rdir_serviceid }}"
-#             openio_rdir_provision_only: "{{ openio_maintenance_mode }}"
-#           with_items: "{{ openio_data_mounts }}"
-#           loop_control:
-#             loop_var: mount
-#             index_var: idx
-#       when:
-#         - openio_data_mounts is defined
-#         #- openio_data_mounts
-
-# # TODO healthcheck
-
-# ###
-
-# - name: OpenIO SDS - Install and configure OpenIO oio-blob-rebuilder
-#   any_errors_fatal: true
-#   hosts: backs
-#   become: true
-#   environment: "{{ openio_environment }}"
-#   tags:
-#     - oio-blob-rebuilder
-
-#   roles:
-#     - role: oio-blob-rebuilder
-#       openio_blob_rebuilder_namespace: "{{ namespace }}"
-#       openio_blob_rebuilder_serviceid: "0"
-#       openio_blob_rebuilder_provision_only: "{{ openio_maintenance_mode }}"
-#       openio_blob_rebuilder_event_agent_url: "beanstalk://{{ openio_bind_address }}:6014"
-
-#   tasks: []   # TODO healthcheck
-# ###
-
-# - name: OpenIO SDS - Install and configure OpenIO oio-event-agent
-#   any_errors_fatal: true
-#   hosts: oio-event-agent
-#   become: true
-#   environment: "{{ openio_environment }}"
-#   tags:
-#     - oio-event-agent
-
-#   roles:
-#     - role: oio-event-agent
-#       openio_event_agent_namespace: "{{ namespace }}"
-#       openio_event_agent_serviceid: "0"
-#       openio_event_agent_provision_only: "{{ openio_maintenance_mode }}"
-
-#   tasks: []   # TODO healthcheck
-# ###
-
-# - name: Install and configure OpenIO ecd
-#   any_errors_fatal: true
-#   hosts: ecd
-#   become: true
-#   environment: "{{ openio_environment }}"
-#   tags:
-#     - ecd
-
-#   roles:
-#     - role: ecd
-#       openio_ecd_namespace: "{{ namespace }}"
-#       openio_ecd_serviceid: "0"
-#       openio_ecd_provision_only: "{{ openio_maintenance_mode }}"
-#   tasks: []   # TODO healthcheck
-# ###
-
 - name: OpenIO SDS - Install and configure OpenIO conscience-agent
   any_errors_fatal: true
   hosts: rawx
@@ -552,79 +133,59 @@
 
 - name: OpenIO SDS - "Bootstrapping OpenIO namespace"
   any_errors_fatal: true
-  hosts: conscience[0]
+  hosts: conscience
   become: true
   environment: "{{ openio_environment }}"
   tags: bootstrap
 
   tasks:
     - block:
-        # - name: "Restart all meta0"
-        #   command: "systemctl restart openio-meta0.service"
-        #   async: 45
-        #   poll: 5
-        #   register: _restart_m0
-        #   delegate_to: "{{ meta }}"
-        #   with_items: "{{ groups['meta0'] }}"
-        #   loop_control:
-        #     loop_var: meta
-
-        # - name: "Restart all meta1"
-        #   command: "systemctl restart openio-meta1.service"
-        #   async: 45
-        #   poll: 5
-        #   register: _restart_m1
-        #   delegate_to: "{{ meta }}"
-        #   with_items: "{{ groups['meta1'] }}"
-        #   loop_control:
-        #     loop_var: meta
-
-        # - name: "Unlock scores meta0 & meta1"
-        #   command: "openio cluster unlockall meta0 meta1 --oio-ns={{ namespace }}"
-
-        # - name: "Wait for meta0 & meta1 services"
-        #   command: "openio cluster wait -d {{ openio_timeout_sensible_score | default(600) }} meta0 meta1 --oio-ns={{ namespace }} -s {{ openio_minimal_score_for_directory_bootstrap | default(50) }}"
-
-        # - name: "Bootstrapping OpenIO namespace {{ namespace }} with {{ openio_replicas }} replicas"
-        #   command: "openio --oio-ns={{ namespace }} directory bootstrap --replicas {{ openio_replicas }} --no-rdir"
-        #   register: meta_bootstrap
-        #   until: meta_bootstrap.rc == 0
-        #   retries: 3
-        #   delay: 5
-
-        # - name: "Restart all meta0"
-        #   command: "systemctl restart openio-meta0.service"
-        #   async: 45
-        #   poll: 5
-        #   register: _restart_m0
-        #   delegate_to: "{{ meta }}"
-        #   with_items: "{{ groups['meta0'] }}"
-        #   loop_control:
-        #     loop_var: meta
-
-        # - name: "Restart all meta1"
-        #   command: "systemctl restart openio-meta1.service"
-        #   async: 45
-        #   poll: 5
-        #   register: _restart_m1
-        #   delegate_to: "{{ meta }}"
-        #   with_items: "{{ groups['meta1'] }}"
-        #   loop_control:
-        #     loop_var: meta
-
         - name: "Unlock all scores"
           command: "openio cluster unlockall rawx --oio-ns={{ namespace }}"
 
         - name: "Wait for rawx & rdir services"
           command: "openio cluster wait -d {{ openio_timeout_sensible_score | default(600) }} rawx rdir --oio-ns={{ namespace }} -s {{ openio_minimal_score_for_volume_admin_bootstrap | default(50) }}"
 
-        - name: "Bootstrapping Reverse Directory for namespace {{ namespace }}"
-          command: "openio --oio-ns={{ namespace }} rdir bootstrap {{ service_type }}"
-          with_items:
-            - "rawx"
-          # - "meta2"
-          loop_control:
-            loop_var: service_type
+        # - name: "Bootstrapping Reverse Directory for namespace {{ namespace }}"
+        #   command: "openio --oio-ns={{ namespace }} rdir bootstrap {{ service_type }}"
+        #   with_items:
+        #     - "rawx"
+        #   loop_control:
+        #     loop_var: service_type
+
+        - block:
+            - set_fact:
+                _location: "{{ openio_location_room | default ('') }}{{ openio_location_rack | default ('') }}{{ openio_location_server | default (default_openio_location_server) }}0"
+              #changed_when: false
+
+            - name: Register number of rdir
+              shell: "openio --oio-ns {{ namespace | d(default_namespace) }} cluster list rdir -f value | wc -l"
+              register: nb_rdir
+              #changed_when: false
+
+            - name: Register number of rawx
+              shell: "openio --oio-ns {{ namespace | d(default_namespace) }} cluster list rawx -f value | wc -l"
+              register: nb_rawx
+              #changed_when: false
+
+            - name: Calculate max reference per rdir and minimal distance
+              set_fact:
+                max_ref_per_rdir: "{{ ( (nb_rawx.stdout | int + nb_meta2.stdout | int) / (nb_rdir.stdout | int) ) | round(method='ceil') | int + 1 }}"
+                min_dist: "{{ _location.split('.') | length }}"
+              #changed_when: false
+
+            - name: "Bootstrapping rawx reverse directory for namespace {{ namespace | d(default_namespace) }}, trying to respect minimum distance between rdir and associated rawx"
+              command: "openio --oio-ns={{ namespace | d(default_namespace) }} rdir bootstrap rawx --min-dist {{ min_dist }}"
+              register: rdir_bootstrap_rawx_min_dist
+              ignore_errors: true
+
+            - name: "Bootstrapping rawx reverse directory for namespace {{ namespace | d(default_namespace) }}"
+              command: "openio --oio-ns={{ namespace | d(default_namespace) }} rdir bootstrap rawx --max-per-rdir {{ max_ref_per_rdir }}"
+              when:
+                - rdir_bootstrap_rawx_min_dist.rc != 0
+          when:
+            - groups.rdir is defined
+            - groups.rdir
       when:
         - openio_bootstrap is defined
         - openio_bootstrap

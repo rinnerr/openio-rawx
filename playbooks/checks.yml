@@ -9,27 +9,33 @@
       assert:
         that:
           - ansible_version.full is version_compare('2.5.0', '>=')
-          - ansible_version.full is version_compare('2.8.0', '<')
+          - ansible_version.full is version_compare('2.9.0', '<')
       check_mode: false
 
-    - name: Even number of zookeeper hosts
-      assert:
-        that: groups.zookeeper |length is not divisibleby 2
-      ignore_errors: "{{ openio_ignore_assert_errors }}"
-      check_mode: false
+    # - name: Even number of zookeeper hosts
+    #   assert:
+    #     that: groups.zookeeper | length is divisibleby 3
+    #   ignore_errors: "{{ openio_ignore_assert_errors }}"
+    #   check_mode: false
 
-    - name: Not enought meta0
-      assert:
-#        that: groups.meta0|length >= 3
-        that: groups.meta0|length >= 0
-      ignore_errors: "{{ openio_ignore_assert_errors }}"
-      check_mode: false
+    # - name: Not enought meta0
+    #   assert:
+    #     that: groups.meta0|length >= 3
+    #   ignore_errors: "{{ openio_ignore_assert_errors }}"
+    #   check_mode: false
 
     - name: Test python-netaddr
       debug:
-        msg: "{{ '192.168.2.19/24' | ipaddr }}"
+        msg: "{{ '118.69.82.122/26' | ipaddr }}"
       register: _test_netaddr
       ignore_errors: true
+
+    - name: Gathering ansible_pkg_mgr
+      setup:
+        gather_subset: min
+        filter: "ansible_pkg_mgr"
+      when:
+        - _test_netaddr is failed
 
     - name: install python-netaddr
       become: true
@@ -45,19 +51,19 @@
       ignore_errors: "{{ openio_ignore_assert_errors }}"
       check_mode: false
 
-    - name: Test metadata definition
-      set_fact:
-        _test_metadata: "{{ groups['backs'] \
-          | map('extract', hostvars, ['openio_metadata_mounts', 0]) \
-          | list }}"
-      ignore_errors: true
+    # - name: Test metadata definition
+    #   set_fact:
+    #     _test_metadata: "{{ groups['backs'] \
+    #       | map('extract', hostvars, ['openio_metadata_mounts', 0]) \
+    #       | list }}"
+    #   ignore_errors: true
 
-    - name: All nodes in 'backs' group have to define a openio_metadata_mounts hostvars
-      assert:
-        that:
-          - _test_metadata is iterable
-          - _test_metadata is not string
-      check_mode: false
+    # - name: All nodes in 'backs' group have to define a openio_metadata_mounts hostvars
+    #   assert:
+    #     that:
+    #       - _test_metadata is iterable
+    #       - _test_metadata is not string
+    #   check_mode: false
 
 - name: Preflight - Check hosts
   hosts: openio
@@ -73,21 +79,20 @@
       ignore_errors: "{{ openio_ignore_assert_errors }}"
       check_mode: false
 
-    - name: Number of zookeeper hosts is not odd
-      assert:
-        that: groups.zookeeper |length is not divisibleby 2
-      ignore_errors: "{{ openio_ignore_assert_errors }}"
-      when: namespace_storage_policy == "THREECOPIES"
+    # - name: Number of zookeeper hosts is not odd
+    #   assert:
+    #     that: groups.zookeeper | length is divisibleby 3
+    #   ignore_errors: "{{ openio_ignore_assert_errors }}"
+    #   when: namespace_storage_policy == "THREECOPIES"
 
-    - name: Number of meta0 hosts is not adequate for three copies
-      assert:
-        that: groups.meta0 | length >= 3
-        #that: groups.meta0 | length >= 0
-      ignore_errors: "{{ openio_ignore_assert_errors }}"
-      when: namespace_storage_policy == "THREECOPIES"
+    # - name: Number of meta0 hosts is not adequate for three copies
+    #   assert:
+    #     that: groups.meta0 | length >= 3
+    #   ignore_errors: "{{ openio_ignore_assert_errors }}"
+    #   when: namespace_storage_policy == "THREECOPIES"
 
-    - name: Install python for Ansible
-      raw: "test -e /usr/bin/python || (yum -y update && yum install -y python-minimal)"
+    - name: Install python for Ansible (ubuntu)
+      raw: "test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)"
       changed_when: false
 
     - name: Gathering network facts
@@ -249,13 +254,13 @@
         that: "'firewalld' not in ps.stdout or _firewalld_disable | default(false) is success"
       ignore_errors: "{{ openio_ignore_assert_errors }}"
 
-    - name: Memory is too small for zookeepers
-      assert:
-        that: ansible_memtotal_mb >= 1830
-      ignore_errors: "{{ openio_ignore_assert_errors }}"
-      when:
-        - inventory_hostname in groups['zookeeper']
-        - openio_checks_filter['zookeeper_memory']
+    # - name: Memory is too small for zookeepers
+    #   assert:
+    #     that: ansible_memtotal_mb >= 1830
+    #   ignore_errors: "{{ openio_ignore_assert_errors }}"
+    #   when:
+    #     - inventory_hostname in groups['zookeeper']
+    #     - openio_checks_filter['zookeeper_memory']
 
     - name: Kernel version is too low
       assert:

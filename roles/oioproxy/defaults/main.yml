@@ -3,7 +3,7 @@
 openio_oioproxy_namespace: "OPENIO"
 openio_oioproxy_serviceid: "0"
 
-openio_oioproxy_version: '4.4.2-1.el7.oio.x86_64'
+openio_oioproxy_version: "5.0.1-1.el7.oio.x86_64"
 
 openio_oioproxy_provision_only: false
 

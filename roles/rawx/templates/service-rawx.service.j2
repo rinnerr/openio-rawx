@@ -8,7 +8,8 @@ Wants=network-online.target
 User=openio
 Group=openio
 ExecStart={{ rawx_httpd_bin }} -D FOREGROUND {% if openio_rawx_golang %}-s OIO,{{ openio_rawx_namespace }},rawx,{{ openio_rawx_serviceid }}{% endif %} -f /etc/oio/sds/{{ openio_rawx_namespace }}/{{ openio_rawx_servicename }}/{{ openio_rawx_servicename }}-httpd.conf
-Restart=always
+Restart=on-failure
+RestartSec=30s
 
 [Install]
 WantedBy=multi-user.target

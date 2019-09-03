@@ -3,13 +3,13 @@
 
 openio_repository_products:
   sds:
-    release: '17.04'
+    release: '19.04'
 #  oiofs:
 #    release: 'unstable'
 #    user: 'oiofs'
 #    password: '################'
 
-openio_repository_openstack_release: "{{ 'queens' if ansible_distribution_release == 'bionic' else 'pike' }}"
+openio_repository_openstack_release: "rocky"
 openio_repository_manage_openstack_repository: true
 openio_repository_manage_epel_repository: true
 openio_repository_disable_policy_autostart: true

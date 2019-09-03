@@ -1,4 +1,8 @@
 ---
+# Network
+openio_bind_interface: "{{ ansible_default_ipv4.alias }}"
+openio_bind_address: "{{ ansible_default_ipv4.address }}"
+
 # Set to true to allow pre-checks to fail and continue deployment
 openio_ignore_assert_errors: false
 
@@ -11,8 +15,8 @@ openio_distribution_supported:
   - Raspbian
 
 openio_release_supported:
-  - "18.10"
-  - "19.04"
+  - '18.10'
+  - '19.04'
 
 openio_checks_filter:
   apparmor: false
@@ -41,6 +45,8 @@ ntp_restrict:
   - "127.0.0.1"
   - "::1"
 
+default_openio_location_server: "{{ ansible_hostname }}."
+
 # for proxies by example
 openio_environment: {}
   #http_proxy: ""
@@ -54,7 +60,7 @@ openio_mirror: "mirror.openio.io"
 openio_no_log: false
 
 # openstack distribution
-openio_openstack_distro: "queens"
+openio_openstack_distro: "rocky"
 
 # Install require on targets
 openio_manage_os_requirement: true

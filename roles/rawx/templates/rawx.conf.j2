@@ -51,6 +51,7 @@ CustomLog /var/log/oio/sds/{{ openio_rawx_namespace }}/{{ openio_rawx_servicenam
 CustomLog /var/log/oio/sds/{{ openio_rawx_namespace }}/{{ openio_rawx_servicename }}/{{ openio_rawx_servicename }}-httpd-access.log log/cid-in  env=log-cid-in
 
 <IfModule worker.c>
+MaxClients {{ openio_rawx_mpm_max_clients }}
 MaxRequestsPerChild {{ openio_rawx_mpm_max_requests_per_child }}
 MaxSpareThreads {{ openio_rawx_mpm_max_spare_threads }}
 MinSpareThreads {{ openio_rawx_mpm_min_spare_threads }}

@@ -6,10 +6,15 @@ openio_namespace_zookeeper_url: ""
 openio_namespace_oioproxy_url: "{{ ansible_default_ipv4.address }}:6006"
 openio_namespace_event_agent_url: "beanstalk://{{ ansible_default_ipv4.address }}:6014"
 openio_namespace_ecd_url: ""
-openio_namespace_meta1_digits: 2
+openio_namespace_meta1_digits: 4
 openio_namespace_udp_allowed: "yes"
 
-openio_namespace_storage_policy: "TOWCOPIES"
+openio_namespace_sqliterepo_cache_waiting_max: 2048
+openio_namespace_sqliterepo_repo_hard_max: 128
+openio_namespace_sqliterepo_repo_soft_max: 128
+openio_namespace_sqliterepo_repo_fd_max_active: 65535
+openio_namespace_number_of_objects_delete_in_a_proxy: 10000
+openio_namespace_storage_policy: "THREECOPIES"
 openio_namespace_chunk_size_megabytes: 100
 openio_namespace_service_update_policy:
   - name: meta2
