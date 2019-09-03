@@ -1,6 +1,6 @@
 ---
 - name: BASE - Basic requirements to install
-  hosts: openio
+  hosts: add-node
   become: true
   any_errors_fatal: true
   environment: "{{ openio_environment }}"
