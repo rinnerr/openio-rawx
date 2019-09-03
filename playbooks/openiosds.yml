@@ -5,6 +5,7 @@
   become: true
   environment: "{{ openio_environment }}"
   tags:
+    - namespace  
     - conscience-agent
     - oioproxy
     - rawx
@@ -31,6 +32,33 @@
     - name: set openio_bind_address as fact
       set_fact:
         openio_bind_address: "{{ openio_bind_address }}"
+
+- name: OpenIO SDS - Install and configure OpenIO Proxy
+  any_errors_fatal: true
+  hosts: add-node
+  become: true
+  environment: "{{ openio_environment }}"
+  tags: oioproxy
+
+  roles:
+    - role: oioproxy
+      openio_oioproxy_namespace: "{{ namespace }}"
+      openio_oioproxy_provision_only: "{{ openio_maintenance_mode }}"
+
+  tasks: []   # TODO healthcheck
+###
+
+- name: OpenIO SDS - Install and configure OpenIO Namespace
+  any_errors_fatal: true
+  hosts: add-node
+  become: true
+  environment: "{{ openio_environment }}"
+  tags: namespace
+
+  roles:
+    - role: namespace
+      openio_namespace_name: "{{ namespace }}"
+###
 
 - name: OpenIO SDS - Install requirements to installation on nodes
   any_errors_fatal: true
