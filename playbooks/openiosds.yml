@@ -1,7 +1,7 @@
 ---
 - name: OpenIO SDS - Collect facts needed
   any_errors_fatal: true
-  hosts: fronts
+  hosts: openio
   become: true
   environment: "{{ openio_environment }}"
   tags:
