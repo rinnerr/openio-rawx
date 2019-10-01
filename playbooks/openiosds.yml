@@ -38,7 +38,7 @@
 
 - name: OpenIO SDS - Install and configure OpenIO beanstalkd
   any_errors_fatal: true
-  hosts: add-node
+  hosts: node2
   become: true
   environment: "{{ openio_environment }}"
   tags: beanstalkd
