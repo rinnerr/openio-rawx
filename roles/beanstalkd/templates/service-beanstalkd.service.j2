@@ -1,0 +1,15 @@
+# {{ ansible_managed }}
+[Unit]
+Description={{ openio_beanstalkd_namespace }}-beanstalkd-{{ openio_beanstalkd_serviceid }}
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=openio
+Group=openio
+ExecStart=/usr/bin/beanstalkd -l {{ openio_beanstalkd_bind_address }} -p {{ openio_beanstalkd_bind_port }} -u openio -b {{ openio_beanstalkd_volume }} -f {{ openio_beanstalkd_fsync }} -s {{ openio_beanstalkd_binlogsize }}
+Restart=on-failure
+RestartSec=30s
+
+[Install]
+WantedBy=multi-user.target

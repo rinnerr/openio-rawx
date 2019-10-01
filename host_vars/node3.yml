@@ -1,8 +1,0 @@
----
-# openio_data_mounts:
-#   - { partition: '/dev/sdb', mountpoint: "/var/lib/oio/sds" }
-#   - { partition: '/dev/sdc', mountpoint: "/var/lib/oio/sds" }
-openio_metadata_mounts:
-  - { partition: '/root', mountpoint: "/mnt/ssd/oio/sds" }
-#openio_bind_address: "172.17.0.33"
-...

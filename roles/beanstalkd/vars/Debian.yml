@@ -1,0 +1,7 @@
+# roles/beanstalkd/vars/Debian.yml
+# Distribution-specific variables for Ubuntu, Debian, ...
+---
+beanstalkd_packages:
+  - beanstalkd
+syslog_user: syslog
+...

@@ -5,10 +5,13 @@
   become: true
   environment: "{{ openio_environment }}"
   tags:
-    - namespace  
-    - conscience-agent
-    - oioproxy
-    - rawx
+    - beanstalkd
+    # - namespace  
+    # - conscience-agent
+    # - oioproxy
+    # - rawx
+    - oio-event-agent
+
   tasks:
     - name: Gathering needed network facts
       setup:
@@ -33,176 +36,215 @@
       set_fact:
         openio_bind_address: "{{ openio_bind_address }}"
 
-- name: OpenIO SDS - Install requirements to installation on nodes
+- name: OpenIO SDS - Install and configure OpenIO beanstalkd
   any_errors_fatal: true
   hosts: rawx
   become: true
   environment: "{{ openio_environment }}"
+  tags: beanstalkd
 
-  tasks:
-    - name: "Include {{ ansible_distribution }} tasks"
-      include_tasks: "{{ item }}"
-      with_first_found:
-        - "openiosds-{{ ansible_distribution }}.yml"
-        - "openiosds-{{ ansible_os_family }}.yml"
-
-    - name: "Set sysctl parameters"
-      sysctl:
-        sysctl_file: "/etc/sysctl.d/openio-sds.conf"
-        name: "{{ item.key }}"
-        value: "{{ item.value }}"
-        sysctl_set: true
-        reload: true
-      with_dict: "{{ openio_sysctl_entries }}"
+  roles:
+    - role: beanstalkd
+      openio_beanstalkd_namespace: "{{ namespace }}"
+      openio_beanstalkd_bind_address: "{{ openio_bind_address }}"
+      openio_beanstalkd_provision_only: "{{ openio_maintenance_mode }}"
+      openio_beanstalkd_volume: "{{ openio_metadata_mounts[0]['mountpoint'] }}/{{ namespace }}/beanstalkd-{{ openio_beanstalkd_serviceid }}"
       when:
-        - openio_sysctl_managed
-        - ansible_virtualization_type != 'docker'
-      failed_when: false
-
-    - name: "Ensure {{ namespace }} directory mount exists"
-      file:
-        path: "{{ item.mountpoint }}/{{ namespace }}"
-        state: directory
-        owner: openio
-        group: openio
-        mode: 0750
-      with_items:
-        - "{{ openio_data_mounts | default( [] ) }}"
-        #- "{{ openio_metadata_mounts | default( [] ) }}"
-
-- name: OpenIO SDS - Install and configure OpenIO Namespace
-  any_errors_fatal: true
-  hosts: add-node
-  become: true
-  environment: "{{ openio_environment }}"
-  tags: namespace
-
-  roles:
-    - role: namespace
-      openio_namespace_name: "{{ namespace }}"
-###
-
-- name: OpenIO SDS - Install and configure OpenIO Proxy
-  any_errors_fatal: true
-  hosts: rawx
-  become: true
-  environment: "{{ openio_environment }}"
-  tags: oioproxy
-
-  roles:
-    - role: oioproxy
-      openio_oioproxy_namespace: "{{ namespace }}"
-      openio_oioproxy_provision_only: "{{ openio_maintenance_mode }}"
+        - openio_metadata_mounts is defined
+        - openio_metadata_mounts[0]
 
   tasks: []   # TODO healthcheck
-
 ###
 
-- name: OpenIO SDS - Install and configure OpenIO rawx
+- name: OpenIO SDS - Install and configure OpenIO oio-event-agent
   any_errors_fatal: true
   hosts: rawx
   become: true
   environment: "{{ openio_environment }}"
   tags:
-    - rawx
-
-  tasks:
-    - block:
-        - name: Install rawx
-          include_role:
-            name: rawx
-          vars:
-            - openio_rawx_namespace: "{{ namespace }}"
-            - openio_rawx_serviceid: "{{ idx }}"
-            - openio_rawx_servicename: "rawx-{{ openio_rawx_serviceid }}"
-            - openio_rawx_bind_port: "{{ openio_rawx_global_bind_port + openio_rawx_serviceid }}"
-            - openio_rawx_volume: "{{ mount.mountpoint }}/{{ namespace }}/{{ openio_rawx_servicename }}"
-            - openio_rawx_provision_only: "{{ openio_maintenance_mode }}"
-          with_items: "{{ openio_data_mounts }}"
-          loop_control:
-            loop_var: mount
-            index_var: idx
-      when:
-        - openio_data_mounts is defined
-        - openio_data_mounts
-
-# TODO healthcheck
-
-- name: OpenIO SDS - Install and configure OpenIO conscience-agent
-  any_errors_fatal: true
-  hosts: rawx
-  become: true
-  environment: "{{ openio_environment }}"
-  tags: conscience-agent
+    - oio-event-agent
 
   roles:
-    - role: conscienceagent
-      openio_conscienceagent_namespace: "{{ namespace }}"
-      openio_conscienceagent_serviceid: "0"
-      openio_conscienceagent_provision_only: "{{ openio_maintenance_mode }}"
+    - role: oio-event-agent
+      openio_event_agent_namespace: "{{ namespace }}"
+      openio_event_agent_serviceid: "0"
+      openio_event_agent_provision_only: "{{ openio_maintenance_mode }}"
 
   tasks: []   # TODO healthcheck
+###
+
+# - name: OpenIO SDS - Install requirements to installation on nodes
+#   any_errors_fatal: true
+#   hosts: rawx
+#   become: true
+#   environment: "{{ openio_environment }}"
+
+#   tasks:
+#     - name: "Include {{ ansible_distribution }} tasks"
+#       include_tasks: "{{ item }}"
+#       with_first_found:
+#         - "openiosds-{{ ansible_distribution }}.yml"
+#         - "openiosds-{{ ansible_os_family }}.yml"
+
+#     - name: "Set sysctl parameters"
+#       sysctl:
+#         sysctl_file: "/etc/sysctl.d/openio-sds.conf"
+#         name: "{{ item.key }}"
+#         value: "{{ item.value }}"
+#         sysctl_set: true
+#         reload: true
+#       with_dict: "{{ openio_sysctl_entries }}"
+#       when:
+#         - openio_sysctl_managed
+#         - ansible_virtualization_type != 'docker'
+#       failed_when: false
+
+#     - name: "Ensure {{ namespace }} directory mount exists"
+#       file:
+#         path: "{{ item.mountpoint }}/{{ namespace }}"
+#         state: directory
+#         owner: openio
+#         group: openio
+#         mode: 0750
+#       with_items:
+#         - "{{ openio_data_mounts | default( [] ) }}"
+#         #- "{{ openio_metadata_mounts | default( [] ) }}"
+
+# - name: OpenIO SDS - Install and configure OpenIO Namespace
+#   any_errors_fatal: true
+#   hosts: add-node
+#   become: true
+#   environment: "{{ openio_environment }}"
+#   tags: namespace
+
+#   roles:
+#     - role: namespace
+#       openio_namespace_name: "{{ namespace }}"
 # ###
 
-- name: OpenIO SDS - "Bootstrapping OpenIO namespace"
-  any_errors_fatal: true
-  hosts: conscience
-  become: true
-  environment: "{{ openio_environment }}"
-  tags: bootstrap
+# - name: OpenIO SDS - Install and configure OpenIO Proxy
+#   any_errors_fatal: true
+#   hosts: rawx
+#   become: true
+#   environment: "{{ openio_environment }}"
+#   tags: oioproxy
 
-  tasks:
-    - block:
-        - name: "Unlock all scores"
-          command: "openio cluster unlockall rawx --oio-ns={{ namespace }}"
+#   roles:
+#     - role: oioproxy
+#       openio_oioproxy_namespace: "{{ namespace }}"
+#       openio_oioproxy_provision_only: "{{ openio_maintenance_mode }}"
 
-        - name: "Wait for rawx & rdir services"
-          command: "openio cluster wait -d {{ openio_timeout_sensible_score | default(600) }} rawx rdir --oio-ns={{ namespace }} -s {{ openio_minimal_score_for_volume_admin_bootstrap | default(50) }}"
+#   tasks: []   # TODO healthcheck
 
-        # - name: "Bootstrapping Reverse Directory for namespace {{ namespace }}"
-        #   command: "openio --oio-ns={{ namespace }} rdir bootstrap {{ service_type }}"
-        #   with_items:
-        #     - "rawx"
-        #   loop_control:
-        #     loop_var: service_type
+# ###
 
-        - block:
-            - set_fact:
-                _location: "{{ openio_location_room | default ('') }}{{ openio_location_rack | default ('') }}{{ openio_location_server | default (default_openio_location_server) }}0"
-              #changed_when: false
+# - name: OpenIO SDS - Install and configure OpenIO rawx
+#   any_errors_fatal: true
+#   hosts: rawx
+#   become: true
+#   environment: "{{ openio_environment }}"
+#   tags:
+#     - rawx
 
-            - name: Register number of rdir
-              shell: "openio --oio-ns {{ namespace | d(default_namespace) }} cluster list rdir -f value | wc -l"
-              register: nb_rdir
-              #changed_when: false
+#   tasks:
+#     - block:
+#         - name: Install rawx
+#           include_role:
+#             name: rawx
+#           vars:
+#             - openio_rawx_namespace: "{{ namespace }}"
+#             - openio_rawx_serviceid: "{{ idx }}"
+#             - openio_rawx_servicename: "rawx-{{ openio_rawx_serviceid }}"
+#             - openio_rawx_bind_port: "{{ openio_rawx_global_bind_port + openio_rawx_serviceid }}"
+#             - openio_rawx_volume: "{{ mount.mountpoint }}/{{ namespace }}/{{ openio_rawx_servicename }}"
+#             - openio_rawx_provision_only: "{{ openio_maintenance_mode }}"
+#           with_items: "{{ openio_data_mounts }}"
+#           loop_control:
+#             loop_var: mount
+#             index_var: idx
+#       when:
+#         - openio_data_mounts is defined
+#         - openio_data_mounts
 
-            - name: Register number of rawx
-              shell: "openio --oio-ns {{ namespace | d(default_namespace) }} cluster list rawx -f value | wc -l"
-              register: nb_rawx
-              #changed_when: false
+# # TODO healthcheck
 
-            - name: Calculate max reference per rdir and minimal distance
-              set_fact:
-                max_ref_per_rdir: "{{ ( (nb_rawx.stdout | int + nb_meta2.stdout | int) / (nb_rdir.stdout | int) ) | round(method='ceil') | int + 1 }}"
-                min_dist: "{{ _location.split('.') | length }}"
-              #changed_when: false
+# - name: OpenIO SDS - Install and configure OpenIO conscience-agent
+#   any_errors_fatal: true
+#   hosts: rawx
+#   become: true
+#   environment: "{{ openio_environment }}"
+#   tags: conscience-agent
 
-            - name: "Bootstrapping rawx reverse directory for namespace {{ namespace | d(default_namespace) }}, trying to respect minimum distance between rdir and associated rawx"
-              command: "openio --oio-ns={{ namespace | d(default_namespace) }} rdir bootstrap rawx --min-dist {{ min_dist }}"
-              register: rdir_bootstrap_rawx_min_dist
-              ignore_errors: true
+#   roles:
+#     - role: conscienceagent
+#       openio_conscienceagent_namespace: "{{ namespace }}"
+#       openio_conscienceagent_serviceid: "0"
+#       openio_conscienceagent_provision_only: "{{ openio_maintenance_mode }}"
 
-            - name: "Bootstrapping rawx reverse directory for namespace {{ namespace | d(default_namespace) }}"
-              command: "openio --oio-ns={{ namespace | d(default_namespace) }} rdir bootstrap rawx --max-per-rdir {{ max_ref_per_rdir }}"
-              when:
-                - rdir_bootstrap_rawx_min_dist.rc != 0
-          when:
-            - groups.rdir is defined
-            - groups.rdir
-      when:
-        - openio_bootstrap is defined
-        - openio_bootstrap
-        - not ansible_check_mode
-        - not openio_maintenance_mode
+#   tasks: []   # TODO healthcheck
+# # ###
+
+# - name: OpenIO SDS - "Bootstrapping OpenIO namespace"
+#   any_errors_fatal: true
+#   hosts: conscience
+#   become: true
+#   environment: "{{ openio_environment }}"
+#   tags: bootstrap
+
+#   tasks:
+#     - block:
+#         - name: "Unlock all scores"
+#           command: "openio cluster unlockall rawx --oio-ns={{ namespace }}"
+
+#         - name: "Wait for rawx & rdir services"
+#           command: "openio cluster wait -d {{ openio_timeout_sensible_score | default(600) }} rawx rdir --oio-ns={{ namespace }} -s {{ openio_minimal_score_for_volume_admin_bootstrap | default(50) }}"
+
+#         # - name: "Bootstrapping Reverse Directory for namespace {{ namespace }}"
+#         #   command: "openio --oio-ns={{ namespace }} rdir bootstrap {{ service_type }}"
+#         #   with_items:
+#         #     - "rawx"
+#         #   loop_control:
+#         #     loop_var: service_type
+
+#         - block:
+#             - set_fact:
+#                 _location: "{{ openio_location_room | default ('') }}{{ openio_location_rack | default ('') }}{{ openio_location_server | default (default_openio_location_server) }}0"
+#               #changed_when: false
+
+#             - name: Register number of rdir
+#               shell: "openio --oio-ns {{ namespace | d(default_namespace) }} cluster list rdir -f value | wc -l"
+#               register: nb_rdir
+#               #changed_when: false
+
+#             - name: Register number of rawx
+#               shell: "openio --oio-ns {{ namespace | d(default_namespace) }} cluster list rawx -f value | wc -l"
+#               register: nb_rawx
+#               #changed_when: false
+
+#             - name: Calculate max reference per rdir and minimal distance
+#               set_fact:
+#                 max_ref_per_rdir: "{{ ( (nb_rawx.stdout | int + nb_meta2.stdout | int) / (nb_rdir.stdout | int) ) | round(method='ceil') | int + 1 }}"
+#                 min_dist: "{{ _location.split('.') | length }}"
+#               #changed_when: false
+
+#             - name: "Bootstrapping rawx reverse directory for namespace {{ namespace | d(default_namespace) }}, trying to respect minimum distance between rdir and associated rawx"
+#               command: "openio --oio-ns={{ namespace | d(default_namespace) }} rdir bootstrap rawx --min-dist {{ min_dist }}"
+#               register: rdir_bootstrap_rawx_min_dist
+#               ignore_errors: true
+
+#             - name: "Bootstrapping rawx reverse directory for namespace {{ namespace | d(default_namespace) }}"
+#               command: "openio --oio-ns={{ namespace | d(default_namespace) }} rdir bootstrap rawx --max-per-rdir {{ max_ref_per_rdir }}"
+#               when:
+#                 - rdir_bootstrap_rawx_min_dist.rc != 0
+#           when:
+#             - groups.rdir is defined
+#             - groups.rdir
+#       when:
+#         - openio_bootstrap is defined
+#         - openio_bootstrap
+#         - not ansible_check_mode
+#         - not openio_maintenance_mode
 ###
+
+
 ...

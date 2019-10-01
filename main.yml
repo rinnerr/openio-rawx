@@ -1,11 +1,11 @@
 ---
-- name: Checks
-  import_playbook: playbooks/checks.yml
-  tags: checks
+# - name: Checks
+#   import_playbook: playbooks/checks.yml
+#   tags: checks
 
-- name: Install base
-  import_playbook: playbooks/install_basic_needs.yml
-  tags: base
+# - name: Install base
+#   import_playbook: playbooks/install_basic_needs.yml
+#   tags: base
 
 - name: SDS
   import_playbook: playbooks/openiosds.yml

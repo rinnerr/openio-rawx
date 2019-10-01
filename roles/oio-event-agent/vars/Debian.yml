@@ -1,0 +1,7 @@
+# roles/event_agent/vars/Debian.yml
+# Distribution-specific variables for Ubuntu, Debian, ...
+---
+event_agent_packages:
+  - openio-sds
+syslog_user: syslog
+...

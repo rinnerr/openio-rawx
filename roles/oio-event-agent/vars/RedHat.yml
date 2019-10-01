@@ -1,0 +1,7 @@
+# roles/event_agent/vars/RedHat.yml
+# Distribution-specific variables for RHEL, CentOS, ...
+---
+event_agent_packages:
+  - openio-sds-server-5.0.1-1.el7.oio.x86_64
+syslog_user: openio
+...

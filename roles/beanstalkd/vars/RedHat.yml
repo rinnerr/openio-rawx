@@ -1,0 +1,7 @@
+# roles/beanstalkd/vars/RedHat.yml
+# Distribution-specific variables for RHEL, CentOS, ...
+---
+beanstalkd_packages:
+  - beanstalkd-1.10-2.el7.x86_64
+syslog_user: openio
+...

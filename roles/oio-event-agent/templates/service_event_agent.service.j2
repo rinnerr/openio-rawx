@@ -1,0 +1,14 @@
+# {{ ansible_managed }}
+[Unit]
+Description={{ openio_event_agent_namespace }}-{{ openio_event_agent_servicename }}
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=openio
+Group=openio
+ExecStart=/usr/bin/oio-event-agent /etc/oio/sds/{{ openio_event_agent_namespace }}/oio-event-agent-{{ openio_event_agent_serviceid }}/oio-event-agent-{{ openio_event_agent_serviceid }}.conf
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -23,16 +23,22 @@
         - ansible_date_time
 
   roles:
-    - role: namespace
+    # - role: namespace
+    #   when: false
+    - role: beanstalkd
       when: false
-    - role: conscienceagent
-      when: false
-    - role: rawx
+    # - role: conscienceagent
+    #   when: false
+    # - role: rawx
+    #   when: false
+    - role: oio-event-agent
       when: false
   tasks:
-    - include: inventory/namespace.yml
-    - include: inventory/rawx.yml
-    - include: inventory/conscienceagent.yml
+    # - include: inventory/namespace.yml
+    # - include: inventory/rawx.yml
+    # - include: inventory/conscienceagent.yml
+    - include: inventory/beanstalkd.yml
+    - include: inventory/oioeventagent.yml
 
     - name: Test directory namespace presence
       stat:

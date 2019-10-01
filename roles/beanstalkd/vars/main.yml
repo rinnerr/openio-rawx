@@ -1,0 +1,8 @@
+---
+openio_beanstalkd_sysconfig_dir: "/etc/oio/sds/{{ openio_beanstalkd_namespace }}"
+openio_beanstalkd_servicename: "beanstalkd-{{ openio_beanstalkd_serviceid }}"
+
+openio_beanstalkd_definition_file: >
+  "{{ openio_beanstalkd_sysconfig_dir }}/
+  {{ openio_beanstalkd_servicename }}/{{ openio_beanstalkd_servicename }}.conf"
+...

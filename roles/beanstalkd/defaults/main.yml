@@ -1,0 +1,20 @@
+# roles/beanstalkd/defaults/main.yml
+---
+openio_beanstalkd_namespace: "OPENIO"
+openio_beanstalkd_serviceid: "0"
+
+openio_beanstalkd_gridinit_dir: "/etc/gridinit.d/{{ openio_beanstalkd_namespace }}"
+openio_beanstalkd_gridinit_file_prefix: ""
+
+openio_beanstalkd_bind_interface: "{{ ansible_default_ipv4.alias }}"
+openio_beanstalkd_bind_address:
+  "{{ hostvars[inventory_hostname]['ansible_' + openio_beanstalkd_bind_interface]['ipv4']['address'] }}"
+openio_beanstalkd_bind_port: 6014
+
+openio_beanstalkd_fsync: 1000
+openio_beanstalkd_binlogsize: 10240000
+
+openio_beanstalkd_volume: "/var/lib/oio/sds/{{ openio_beanstalkd_namespace }}/{{ openio_beanstalkd_servicename }}"
+openio_beanstalkd_provision_only: false
+openio_beanstalkd_location: "{{ ansible_hostname }}.{{ openio_beanstalkd_serviceid }}"
+...
